@@ -26,6 +26,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 - 50 levels of Undo / Repeat
 
 **Modern additions**
+- **Tabs**: open several pictures at once. Each tab keeps its own undo history, zoom and file. ⌘N opens a new picture, ⌘W closes a tab, ⌃⇥ or ⇧⌘] / ⇧⌘[ switches tabs, and middle-click on a tab closes it. The tab bar is hidden by default: use **View → Show Tab Bar** (⇧⌘T).
 - **Crop** to the current selection (⇧⌘X, or the toolbox button)
 - **Remove Background** using Apple's on-device subject segmentation (⇧⌘B, or the toolbox button). It works on the whole picture or on a selection and needs macOS 14 or later.
 - Transparency support, shown as a checkerboard and preserved in PNG and TIFF files
@@ -41,7 +42,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 ## Build and run
 
 ```bash
-git clone https://github.com/udiweinstein/ClassicPaint.git
+git clone https://github.com/<your-username>/ClassicPaint.git
 cd ClassicPaint
 ./build.sh
 open build/ClassicPaint.app
@@ -61,11 +62,14 @@ The app is not notarized, so macOS Gatekeeper blocks it the first time:
 
 | Action | Shortcut |
 |---|---|
+| New picture (tab) / Open / Close tab | ⌘N / ⌘O / ⌘W |
+| Next / previous tab | ⌃⇥ or ⇧⌘] / ⇧⌘[ |
+| Show / Hide Tab Bar | ⇧⌘T |
 | Undo / Repeat | ⌘Z / ⌘Y |
 | Cut / Copy / Paste / Select All | ⌘X / ⌘C / ⌘V / ⌘A |
 | Crop to selection | ⇧⌘X |
 | Remove Background | ⇧⌘B |
-| Flip/Rotate · Stretch/Skew · Attributes | ⌘R · ⌘W · ⌘E |
+| Flip/Rotate · Stretch/Skew · Attributes | ⌘R · ⌥⌘W · ⌘E |
 | Invert Colors · Clear Image | ⌘I · ⇧⌘N |
 | Tool Box · Color Box · Grid · View Bitmap | ⌘T · ⌘L · ⌘G · ⌘F |
 | Zoom in / out / normal | ⌘= / ⌘- / ⌘0 |
@@ -81,6 +85,7 @@ Sources/ClassicPaint/
   Bitmap.swift             pixel buffer, rasterizing, flood fill, transforms
   BackgroundRemover.swift  Vision-based Remove Background
   State.swift              tools, palette, document and undo stack
+  Tabs.swift               tab bar and multi-document handling
 build.sh                   build script
 watch.sh                   optional dev helper: rebuilds when a .rebuild file appears
 Info.plist                 app bundle metadata
