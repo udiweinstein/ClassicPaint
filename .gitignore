@@ -1,0 +1,16 @@
+# Build output
+build/
+*.app
+*.zip
+build.log
+
+# Dev watcher state
+.rebuild
+.build-status
+
+# macOS / editors
+.DS_Store
+.swiftpm/
+.build/
+xcuserdata/
+*.xcuserstate
