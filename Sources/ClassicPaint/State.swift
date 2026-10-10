@@ -116,9 +116,21 @@ final class PaintDocument {
     var url: URL?
     var dirty = false
 
+    // per-tab view state
+    var zoom: CGFloat = 1
+    var scrollOrigin = NSPoint.zero
+
     init(width: Int = 640, height: Int = 480) { bitmap = Bitmap(width: width, height: height) }
 
-    var name: String { url?.lastPathComponent ?? "untitled" }
+    /// A blank, unsaved, untouched picture (can be replaced when opening a file)
+    var isPristine: Bool { url == nil && !dirty && undoStack.isEmpty }
+
+    private static var untitledCounter = 0
+    private let untitledNumber: Int = {
+        PaintDocument.untitledCounter += 1
+        return PaintDocument.untitledCounter
+    }()
+    var name: String { url?.lastPathComponent ?? (untitledNumber == 1 ? "untitled" : "untitled \(untitledNumber)") }
     var title: String { "\(name) - ClassicPaint" }
 
     func pushUndo() {

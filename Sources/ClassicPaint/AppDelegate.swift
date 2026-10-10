@@ -7,6 +7,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var window: NSWindow!
     var main: MainView!
     var doc = PaintDocument()
+    var docs: [PaintDocument] = []
+    var currentTab = 0
     var canvas: CanvasView { main.canvas }
     private var fontToolbar: FontToolbar?
     private var previewWindow: NSWindow?
@@ -15,18 +17,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     func applicationWillFinishLaunching(_ n: Notification) {
         NSApp.applicationIconImage = makeAppIcon(512)
+        NSWindow.allowsAutomaticWindowTabbing = false   // we have our own tab bar
         buildMenu()
         main = MainView(frame: NSRect(x: 0, y: 0, width: 900, height: 660))
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 660),
                           styleMask: [.titled, .closable, .miniaturizable, .resizable],
                           backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
+        window.tabbingMode = .disallowed
         window.contentView = main
         window.delegate = self
         window.minSize = NSSize(width: 460, height: 440)
         window.center()
         window.setFrameAutosaveName("ClassicPaintMainWindow")
         window.backgroundColor = W95.face
+        docs = [doc]
 
         ps.onChange.append { [weak self] in
             guard let self = self else { return }
@@ -49,20 +54,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        confirmDiscard() ? .terminateNow : .terminateCancel
+        confirmAllTabs() ? .terminateNow : .terminateCancel
     }
 
-    func windowShouldClose(_ sender: NSWindow) -> Bool { confirmDiscard() }
+    func windowShouldClose(_ sender: NSWindow) -> Bool { confirmAllTabs() }
 
     func application(_ sender: NSApplication, openFile filename: String) -> Bool {
-        guard confirmDiscard() else { return false }
-        return openURL(URL(fileURLWithPath: filename))
+        openURL(URL(fileURLWithPath: filename))
     }
 
     func updateTitle() {
         guard let w = window else { return }
         w.title = doc.title
-        w.isDocumentEdited = doc.dirty
+        w.isDocumentEdited = docs.contains { $0.dirty }
+        main?.tabBar.needsDisplay = true
     }
 
     // MARK: Menus
@@ -100,6 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let file = submenu(bar, "File")
         add(file, "New", #selector(newDoc(_:)), "n")
         add(file, "Open...", #selector(openDoc(_:)), "o")
+        add(file, "Close Tab", #selector(closeCurrentTab(_:)), "w")
         add(file, "Save", #selector(saveDoc(_:)), "s")
         add(file, "Save As...", #selector(saveDocAs(_:)), "s", [.command, .shift])
         file.addItem(.separator())
@@ -140,10 +146,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         zoomM.addItem(.separator())
         add(zoomM, "Show Grid", #selector(toggleGrid(_:)), "g")
         add(view, "View Bitmap", #selector(viewBitmap(_:)), "f")
+        view.addItem(.separator())
+        add(view, "Show Tab Bar", #selector(toggleTabBar(_:)), "t", [.command, .shift])
+        add(view, "Next Tab", #selector(nextTab(_:)), "}")
+        add(view, "Previous Tab", #selector(previousTab(_:)), "{")
 
         let image = submenu(bar, "Image")
         add(image, "Flip/Rotate...", #selector(flipRotate(_:)), "r")
-        add(image, "Stretch/Skew...", #selector(stretchSkew(_:)), "w")
+        add(image, "Stretch/Skew...", #selector(stretchSkew(_:)), "w", [.command, .option])
         add(image, "Invert Colors", #selector(invertColors(_:)), "i")
         add(image, "Crop", #selector(cropImage(_:)), "x", [.command, .shift])
         add(image, "Remove Background", #selector(removeBackground(_:)), "b", [.command, .shift])
@@ -167,6 +177,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         case #selector(toggleToolbox(_:)): m.state = main.showToolbox ? .on : .off
         case #selector(toggleColorbox(_:)): m.state = main.showColors ? .on : .off
         case #selector(toggleStatus(_:)): m.state = main.showStatus ? .on : .off
+        case #selector(toggleTabBar(_:)): m.title = main.showTabBar ? "Hide Tab Bar" : "Show Tab Bar"
         case #selector(toggleGrid(_:)): m.state = ps.showGrid ? .on : .off
         case #selector(toggleOpaque(_:)): m.state = ps.transparentSelect ? .off : .on
         case #selector(toggleTextToolbar(_:)): m.state = (fontToolbar?.panel.isVisible ?? false) ? .on : .off
@@ -192,20 +203,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
     }
 
-    @objc func newDoc(_ s: Any?) {
-        guard confirmDiscard() else { return }
-        canvas.cancelInteraction()
-        doc = PaintDocument()
-        canvas.docChanged()
-        updateTitle()
-    }
+    /// File ▸ New opens a blank picture in a new tab
+    @objc func newDoc(_ s: Any?) { addTab(PaintDocument()) }
 
     @objc func openDoc(_ s: Any?) {
-        guard confirmDiscard() else { return }
         let p = NSOpenPanel()
         p.allowedContentTypes = [.image]
-        p.allowsMultipleSelection = false
-        if p.runModal() == .OK, let u = p.url { _ = openURL(u) }
+        p.allowsMultipleSelection = true
+        if p.runModal() == .OK { for u in p.urls { openURL(u) } }
     }
 
     func loadCGImage(_ u: URL) -> CGImage? {
@@ -216,20 +221,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     @discardableResult
     func openURL(_ u: URL) -> Bool {
+        // already open? just switch to its tab
+        if let i = docs.firstIndex(where: { $0.url?.standardizedFileURL == u.standardizedFileURL }) {
+            switchToTab(i)
+            return true
+        }
         guard let cg = loadCGImage(u) else {
             message("ClassicPaint cannot read this file.", "This is not a valid bitmap file, or its format is not currently supported.")
             return false
         }
-        canvas.cancelInteraction()
         let d = PaintDocument()
         let hasAlpha = [CGImageAlphaInfo.first, .last, .premultipliedFirst, .premultipliedLast].contains(cg.alphaInfo)
         let b = Bitmap(width: cg.width, height: cg.height, fill: hasAlpha ? nil : .white)
         b.draw(cg, in: CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
         d.bitmap = b
         d.url = u
-        doc = d
-        canvas.docChanged()
-        updateTitle()
+        showInTab(d)
         NSDocumentController.shared.noteNewRecentDocumentURL(u)
         return true
     }
@@ -379,6 +386,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func toggleToolbox(_ s: Any?) { main.showToolbox.toggle() }
     @objc func toggleColorbox(_ s: Any?) { main.showColors.toggle() }
     @objc func toggleStatus(_ s: Any?) { main.showStatus.toggle() }
+    @objc func toggleTabBar(_ s: Any?) { main.showTabBar.toggle() }
     @objc func toggleGrid(_ s: Any?) { ps.showGrid.toggle(); canvas.needsDisplay = true }
     @objc func toggleTextToolbar(_ s: Any?) {
         if let f = fontToolbar, f.panel.isVisible { f.panel.orderOut(nil) } else { showFontToolbar() }
@@ -565,11 +573,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         • Eraser with right button = Color Eraser (replaces the foreground color only).
         • Drag the blue handles on the canvas edge to resize the picture.
         • ⌘Z Undo, ⌘Y Repeat, ⌘G Grid, ⌘F View Bitmap, ⌘R Flip/Rotate, ⌘E Attributes.
+        • Tabs: ⌘N new picture, ⌘O open (several at once), ⌘W close tab, ⌃⇥ or ⇧⌘] / ⇧⌘[ to switch.
         """)
     }
 
     @objc func about(_ s: Any?) {
-        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1"
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.2"
         message("ClassicPaint", "Version \(v)\nA native macOS tribute to the classic Windows paint program.\n\nNot affiliated with, endorsed by, or sponsored by Microsoft. Microsoft Paint is a trademark of Microsoft Corporation.\n\nReleased under the MIT License.")
     }
 

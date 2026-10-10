@@ -955,6 +955,17 @@ final class CanvasView: NSView {
         needsDisplay = true
     }
 
+    /// Shows the current tab's picture, restoring its zoom and scroll position.
+    func showDocument() {
+        cancelInteraction()
+        zoom = doc.zoom
+        updateSize()
+        scroll(doc.scrollOrigin)
+        window?.invalidateCursorRects(for: self)
+        needsDisplay = true
+        ps.notify()
+    }
+
     func docChanged() {
         cancelInteraction()
         updateSize()
@@ -979,6 +990,8 @@ final class CanvasView: NSView {
         switch e.keyCode {
         case 51, 117:   // backspace / forward delete
             deleteSel()
+        case 48 where e.modifierFlags.contains(.control):   // ⌃⇥ / ⌃⇧⇥ switch tabs
+            if e.modifierFlags.contains(.shift) { appDelegate.previousTab(nil) } else { appDelegate.nextTab(nil) }
         case 53:        // escape
             if polyActive || curveStage > 0 {
                 if let b = base { bmp.restore(from: b) }
