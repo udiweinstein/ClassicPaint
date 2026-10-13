@@ -33,6 +33,10 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 
 **File formats:** PNG, BMP (24-bit), JPEG, GIF, TIFF.
 
+## Download
+
+Get the ready-to-run app from the **[latest release](https://github.com/udiweinstein/ClassicPaint/releases/latest)**. Download `ClassicPaint.zip`, unzip it and drag ClassicPaint into Applications. Then see [Opening a downloaded copy](#opening-a-downloaded-copy) for the first launch.
+
 ## Requirements
 
 - macOS 11 Big Sur or later (Remove Background needs macOS 14 Sonoma or later)
@@ -42,7 +46,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 ## Build and run
 
 ```bash
-git clone https://github.com/<your-username>/ClassicPaint.git
+git clone https://github.com/udiweinstein/ClassicPaint.git
 cd ClassicPaint
 ./build.sh
 open build/ClassicPaint.app
