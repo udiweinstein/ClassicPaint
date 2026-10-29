@@ -10,6 +10,7 @@ final class WindowMenuBar: NSView {
     static let height: CGFloat = 20
 
     private var pressed = -1
+    private var pendingOpen = -1          // menu to open next, when the mouse moves to another title
     private var hover = -1
     private var tracking: NSTrackingArea?
 
@@ -58,18 +59,44 @@ final class WindowMenuBar: NSView {
         open(i)
     }
 
-    /// Pops up menu `i` under its title. Blocks until the menu closes.
-    func open(_ i: Int) {
-        let items = menus
-        guard i >= 0, i < items.count, let sub = items[i].submenu else { return }
-        let r = itemRects()[i]
-        pressed = i; hover = -1
-        display()
-        // A copy, so the menu keeps its place in the real macOS menu bar
-        let m = (sub.copy() as? NSMenu) ?? sub
-        m.font = NSFont.menuFont(ofSize: 13)
-        m.popUp(positioning: nil, at: NSPoint(x: r.minX, y: r.maxY + 1), in: self)
+    /// Pops up menu `i` under its title. While it's open, moving the mouse onto another
+    /// title switches to that menu, like on Windows.
+    func open(_ first: Int) {
+        var i = first
+        while true {
+            let items = menus
+            guard i >= 0, i < items.count, let sub = items[i].submenu else { break }
+            let r = itemRects()[i]
+            pressed = i; hover = -1; pendingOpen = -1
+            display()
+            // A copy, so the menu keeps its place in the real macOS menu bar
+            let m = (sub.copy() as? NSMenu) ?? sub
+            m.font = NSFont.menuFont(ofSize: 13)
+
+            // Watch the mouse while the menu is tracking (menus run their own event loop)
+            let current = i
+            let watcher = Timer(timeInterval: 0.03, repeats: true) { [weak self, weak m] _ in
+                guard let self = self, let m = m, let w = self.window else { return }
+                let p = self.convert(w.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
+                let j = self.index(at: p)
+                if j >= 0 && j != current {
+                    self.pendingOpen = j
+                    m.cancelTrackingWithoutAnimation()
+                }
+            }
+            RunLoop.main.add(watcher, forMode: .eventTracking)
+            RunLoop.main.add(watcher, forMode: .common)
+
+            // Place the menu's top edge just under the menu bar, not over the title
+            // (modern macOS draws the menu a few points above the requested point)
+            m.popUp(positioning: nil, at: NSPoint(x: r.minX, y: bounds.maxY + 5), in: self)
+            watcher.invalidate()
+
+            if pendingOpen >= 0 { i = pendingOpen; continue }
+            break
+        }
         pressed = -1
+        pendingOpen = -1
         needsDisplay = true
     }
 

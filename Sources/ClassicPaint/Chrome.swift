@@ -466,11 +466,9 @@ final class MainView: NSView {
     var showToolbox = true { didSet { needsLayout = true } }
     var showColors = true { didSet { needsLayout = true } }
     var showStatus = true { didSet { needsLayout = true } }
-    /// Tab bar is hidden by default; the choice is remembered between launches
-    var showTabBar = UserDefaults.standard.bool(forKey: "ShowTabBar") {
-        didSet { UserDefaults.standard.set(showTabBar, forKey: "ShowTabBar"); needsLayout = true }
-    }
-    /// Windows-style menu bar inside the window (off by default, remembered)
+    /// Tab bar always starts hidden (tabs still work: ⌘N, ⇧⌘] / ⇧⌘[)
+    var showTabBar = false { didSet { needsLayout = true } }
+    /// Windows-style menu bar inside the window: on by default, remembered between launches
     var showMenuBar = UserDefaults.standard.bool(forKey: "MenusInWindow") {
         didSet { UserDefaults.standard.set(showMenuBar, forKey: "MenusInWindow"); needsLayout = true; menuBar.needsDisplay = true }
     }

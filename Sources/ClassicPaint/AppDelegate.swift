@@ -16,6 +16,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     // MARK: Launch
 
     func applicationWillFinishLaunching(_ n: Notification) {
+        // First-launch defaults: Windows-style menus in the window
+        UserDefaults.standard.register(defaults: ["MenusInWindow": true])
         NSApp.applicationIconImage = makeAppIcon(512)
         NSWindow.allowsAutomaticWindowTabbing = false   // we have our own tab bar
         buildMenu()
@@ -54,7 +56,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        confirmAllTabs() ? .terminateNow : .terminateCancel
+        guard confirmAllTabs() else { return .terminateCancel }
+        UserDefaults.standard.set(main.showMenuBar, forKey: "MenusInWindow")
+        UserDefaults.standard.synchronize()
+        return .terminateNow
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool { confirmAllTabs() }
