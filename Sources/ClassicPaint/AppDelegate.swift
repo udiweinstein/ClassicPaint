@@ -73,6 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         w.title = doc.title
         w.isDocumentEdited = docs.contains { $0.dirty }
         main?.tabBar.needsDisplay = true
+        main?.needsLayout = true
     }
 
     // MARK: Menus
@@ -128,6 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         add(edit, "Paste", #selector(paste(_:)), "v", useSelf: false)
         add(edit, "Clear Selection", #selector(delete(_:)), useSelf: false)
         add(edit, "Select All", #selector(selectAll(_:)), "a", useSelf: false)
+        add(edit, "Invert Selection", #selector(invertSelection(_:)), "i", [.command, .shift])
         edit.addItem(.separator())
         add(edit, "Copy To...", #selector(copyTo(_:)))
         add(edit, "Paste From...", #selector(pasteFrom(_:)))
@@ -184,7 +186,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         case #selector(toggleColorbox(_:)): m.state = main.showColors ? .on : .off
         case #selector(toggleStatus(_:)): m.state = main.showStatus ? .on : .off
         case #selector(toggleMenusInWindow(_:)): m.state = main.showMenuBar ? .on : .off
-        case #selector(toggleTabBar(_:)): m.title = main.showTabBar ? "Hide Tab Bar" : "Show Tab Bar"
+        case #selector(toggleTabBar(_:)):
+            // with several pictures open the tab bar always shows
+            if docs.count > 1 { m.title = "Hide Tab Bar"; return false }
+            m.title = main.showTabBar ? "Hide Tab Bar" : "Show Tab Bar"
         case #selector(toggleGrid(_:)): m.state = ps.showGrid ? .on : .off
         case #selector(toggleOpaque(_:)): m.state = ps.transparentSelect ? .off : .on
         case #selector(toggleTextToolbar(_:)): m.state = (fontToolbar?.panel.isVisible ?? false) ? .on : .off
@@ -394,11 +399,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func toggleColorbox(_ s: Any?) { main.showColors.toggle() }
     @objc func toggleStatus(_ s: Any?) { main.showStatus.toggle() }
     @objc func toggleTabBar(_ s: Any?) { main.showTabBar.toggle() }
+    @objc func invertSelection(_ s: Any?) { canvas.invertSelection() }
     @objc func toggleMenusInWindow(_ s: Any?) {
         main.showMenuBar.toggle()
         // keep the canvas from jumping when the bar appears/disappears
         var f = window.frame
-        let dh = main.showMenuBar ? WindowMenuBar.height : -WindowMenuBar.height
+        let h = WindowMenuBar.height + WindowMenuBar.gap
+        let dh = main.showMenuBar ? h : -h
         f.size.height += dh; f.origin.y -= dh
         window.setFrame(f, display: true, animate: false)
     }
@@ -584,6 +591,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         • Shift constrains lines to 45° and shapes to squares/circles.
         • Curve: drag a line, then click/drag twice to bend it.
         • Polygon: drag the first side, click for more corners, double-click to close.
+        • Select tool options: rectangle or ellipse shape. Free-Form Select draws any shape.
+        • Edit ▸ Invert Selection (⇧⌘I) selects everything except the shape; then Delete or Crop.
         • Select: drag to move. Option-drag copies, Shift-drag smears. Arrow keys nudge.
         • Eraser with right button = Color Eraser (replaces the foreground color only).
         • Drag the blue handles on the canvas edge to resize the picture.
@@ -594,7 +603,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
 
     @objc func about(_ s: Any?) {
-        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.3"
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.4"
         message("ClassicPaint", "Version \(v)\nA native macOS tribute to the classic Windows paint program.\n\nNot affiliated with, endorsed by, or sponsored by Microsoft. Microsoft Paint is a trademark of Microsoft Corporation.\n\nReleased under the MIT License.")
     }
 

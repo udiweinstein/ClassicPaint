@@ -8,6 +8,7 @@ import Cocoa
 final class WindowMenuBar: NSView {
     override var isFlipped: Bool { true }
     static let height: CGFloat = 20
+    static let gap: CGFloat = 5          // space between the menu bar and the tool box / canvas
 
     private var pressed = -1
     private var pendingOpen = -1          // menu to open next, when the mouse moves to another title

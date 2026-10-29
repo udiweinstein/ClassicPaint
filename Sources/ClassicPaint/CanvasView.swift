@@ -3,7 +3,9 @@ import Cocoa
 final class Selection {
     var x: Int, y: Int
     var w: Int, h: Int
-    var path: CGPath?          // free-form outline, local coordinates
+    var path: CGPath?          // free-form / ellipse outline, local coordinates
+    var evenOdd = false        // path is "everything except a shape" (Invert Selection)
+    var invertedFrom: Selection?   // the shape this inverted selection came from
     var content: Bitmap?       // non-nil once the selection is "floating"
 
     init(x: Int, y: Int, w: Int, h: Int, path: CGPath? = nil) {
@@ -213,7 +215,13 @@ final class CanvasView: NSView {
             NSColor.black.setStroke(); NSBezierPath(rect: r.insetBy(dx: 0.5, dy: 0.5)).stroke()
         }
 
-        if let m = marquee { dashedRect(viewRect(m), g) }
+        if let m = marquee {
+            if ps.tool == .select && ps.selectEllipse {
+                dashedPath(CGPath(ellipseIn: CGRect(x: 0, y: 0, width: m.width, height: m.height), transform: nil), at: m.origin, g)
+            } else {
+                dashedRect(viewRect(m), g)
+            }
+        }
         if lasso.count > 1 {
             g.saveGState()
             g.setLineWidth(1); g.setStrokeColor(W95.navy.cgColor); g.setLineDash(phase: 0, lengths: [3, 3])
@@ -223,6 +231,7 @@ final class CanvasView: NSView {
         }
         if let s = selection {
             dashedRect(viewRect(s.rect), g)
+            if let p = s.path, s.content == nil { dashedPath(p, at: s.rect.origin, g) }   // the actual shape
             for r in selectionHandleRects() {
                 NSColor.white.setFill(); r.fill()
                 W95.navy.setStroke(); NSBezierPath(rect: r.insetBy(dx: 0.5, dy: 0.5)).stroke()
@@ -498,7 +507,9 @@ final class CanvasView: NSView {
             }
         case .select:
             if !movingSel, let m = marquee, m.width > 0, m.height > 0, start != last {
-                selection = Selection(x: Int(m.minX), y: Int(m.minY), w: Int(m.width), h: Int(m.height))
+                let shape: CGPath? = ps.selectEllipse
+                    ? CGPath(ellipseIn: CGRect(x: 0, y: 0, width: m.width, height: m.height), transform: nil) : nil
+                selection = Selection(x: Int(m.minX), y: Int(m.minY), w: Int(m.width), h: Int(m.height), path: shape)
             }
             marquee = nil
         case .freeSelect:
@@ -655,7 +666,7 @@ final class CanvasView: NSView {
     private func extract(_ s: Selection) -> Bitmap {
         let c = Bitmap(width: s.w, height: s.h, fill: nil)
         c.ctx.saveGState()
-        if let p = s.path { c.ctx.addPath(p); c.ctx.clip() }
+        if let p = s.path { c.ctx.addPath(p); c.ctx.clip(using: s.evenOdd ? .evenOdd : .winding) }
         c.draw(bmp.image(), in: CGRect(x: -s.x, y: -s.y, width: bmp.width, height: bmp.height))
         c.ctx.restoreGState()
         return c
@@ -667,7 +678,7 @@ final class CanvasView: NSView {
         s.content = extract(s)
         if let p = s.path {
             var t = CGAffineTransform(translationX: CGFloat(s.x), y: CGFloat(s.y))
-            if let moved = p.copy(using: &t) { bmp.fillPath(moved, ps.secondary) }
+            if let moved = p.copy(using: &t) { bmp.fillPath(moved, ps.secondary, evenOdd: s.evenOdd) }
         } else {
             bmp.fillRect(s.x, s.y, s.w, s.h, ps.secondary.packed)
         }
@@ -676,6 +687,47 @@ final class CanvasView: NSView {
     func commitSelection() {
         if let s = selection, let img = displayImage(s) { bmp.draw(img, in: s.rect) }
         selection = nil
+        needsDisplay = true
+    }
+
+    /// Dashed outline of a selection shape (path in image coordinates relative to `origin`)
+    private func dashedPath(_ p: CGPath, at origin: CGPoint, _ g: CGContext) {
+        var t = CGAffineTransform(a: zoom, b: 0, c: 0, d: zoom,
+                                  tx: pad + origin.x * zoom, ty: pad + origin.y * zoom)
+        guard let vp = p.copy(using: &t) else { return }
+        g.saveGState()
+        g.setLineWidth(1)
+        g.addPath(vp); g.setStrokeColor(CGColor(gray: 1, alpha: 1)); g.strokePath()
+        g.addPath(vp); g.setStrokeColor(W95.navy.cgColor); g.setLineDash(phase: 0, lengths: [3, 3]); g.strokePath()
+        g.restoreGState()
+    }
+
+    /// Edit ▸ Invert Selection: select everything *except* the current shape
+    /// (draw a circle, invert, Delete → keeps only the circle; or Crop → cut-out).
+    func invertSelection() {
+        commitText()
+        guard let s = selection else { NSSound.beep(); return }
+        if let inner = s.invertedFrom, s.content == nil {        // inverting twice → back to the shape
+            selection = inner
+            needsDisplay = true
+            return
+        }
+        if s.content != nil {                                    // floating: drop it in place first
+            let shape = Selection(x: s.x, y: s.y, w: s.w, h: s.h, path: s.path)
+            commitSelection()
+            selection = shape
+        }
+        guard let cur = selection else { return }
+        let W = bmp.width, H = bmp.height
+        let path = CGMutablePath()
+        path.addRect(CGRect(x: 0, y: 0, width: W, height: H))
+        var t = CGAffineTransform(translationX: CGFloat(cur.x), y: CGFloat(cur.y))
+        if let p = cur.path, let moved = p.copy(using: &t) { path.addPath(moved) } else { path.addRect(cur.rect) }
+        let inv = Selection(x: 0, y: 0, w: W, h: H, path: path)
+        inv.evenOdd = true
+        inv.invertedFrom = cur
+        if ps.tool != .select && ps.tool != .freeSelect { ps.setTool(.select) }
+        selection = inv
         needsDisplay = true
     }
 

@@ -70,6 +70,7 @@ final class PaintState {
     var lineWidthIndex = 0
     var shapeStyle = 0              // 0 outline, 1 outline+fill, 2 fill only
     var transparentSelect = false   // "Draw Opaque" unchecked
+    var selectEllipse = false       // Select tool shape: rectangle or ellipse
     var showGrid = false
 
     var textFont: NSFont = NSFont(name: "Arial", size: 14) ?? NSFont.systemFont(ofSize: 14)

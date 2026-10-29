@@ -111,11 +111,11 @@ final class Bitmap {
         ctx.restoreGState()
     }
 
-    func fillPath(_ path: CGPath, _ color: RGB) {
+    func fillPath(_ path: CGPath, _ color: RGB, evenOdd: Bool = false) {
         ctx.saveGState()
         ctx.setFillColor(color.cg)
         ctx.addPath(path)
-        ctx.fillPath()
+        ctx.fillPath(using: evenOdd ? .evenOdd : .winding)
         ctx.restoreGState()
     }
 

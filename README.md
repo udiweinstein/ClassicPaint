@@ -18,6 +18,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 - The original 28-color palette: left click sets the foreground color, right click (or Control-click) sets the background color, and double-click edits a color
 - Options box under the tool box: line widths, brush shapes, eraser and airbrush sizes, fill styles, opaque or transparent selection, zoom levels
 - Selections: drag to move, Option-drag to copy, Shift-drag to "smear", arrow keys to nudge, and 8 handles to stretch
+- Selection shapes: rectangle or **ellipse** (Select tool options), any shape with Free-Form Select, and **Invert Selection** (⇧⌘I) to select everything except the shape. Delete erases the selected area and Crop cuts the picture to it.
 - Blue handles on the canvas edge to resize the picture
 - Windows 9x chrome: 3D bevels, dithered pressed buttons, status bar with coordinates and size
 - Image menu: Flip/Rotate, Stretch/Skew, Invert Colors, Attributes, Clear Image, Draw Opaque
@@ -27,7 +28,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 
 **Modern additions**
 - **Menus in Window** (View menu, ⌥⌘M): shows File, Edit, View, Image, Colors and Help as a Windows-style menu bar inside the window. Option+letter opens a menu, like Alt+letter on Windows. On by default, and the choice is remembered.
-- **Tabs**: open several pictures at once. Each tab keeps its own undo history, zoom and file. ⌘N opens a new picture, ⌘W closes a tab, ⌃⇥ or ⇧⌘] / ⇧⌘[ switches tabs, and middle-click on a tab closes it. The tab bar starts hidden each time: use **View → Show Tab Bar** (⇧⌘T).
+- **Tabs**: open several pictures at once. Each tab keeps its own undo history, zoom and file. ⌘N opens a new picture, ⌘W closes a tab, ⌃⇥ or ⇧⌘] / ⇧⌘[ switches tabs, and middle-click on a tab closes it. The tab bar appears automatically when more than one picture is open. With a single picture it stays hidden unless you choose **View → Show Tab Bar** (⇧⌘T).
 - **Crop** to the current selection (⇧⌘X, or the toolbox button)
 - **Remove Background** using Apple's on-device subject segmentation (⇧⌘B, or the toolbox button). It works on the whole picture or on a selection and needs macOS 14 or later.
 - Transparency support, shown as a checkerboard and preserved in PNG and TIFF files
@@ -70,6 +71,7 @@ The app is not notarized, so macOS Gatekeeper blocks it the first time:
 | New picture (tab) / Open / Close tab | ⌘N / ⌘O / ⌘W |
 | Next / previous tab | ⌃⇥ or ⇧⌘] / ⇧⌘[ |
 | Show / Hide Tab Bar | ⇧⌘T |
+| Invert Selection | ⇧⌘I |
 | Menus in Window on / off | ⌥⌘M |
 | Undo / Repeat | ⌘Z / ⌘Y |
 | Cut / Copy / Paste / Select All | ⌘X / ⌘C / ⌘V / ⌘A |
