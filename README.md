@@ -18,6 +18,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 - The original 28-color palette: left click sets the foreground color, right click (or Control-click) sets the background color, and double-click edits a color
 - Options box under the tool box: line widths, brush shapes, eraser and airbrush sizes, fill styles, opaque or transparent selection, zoom levels
 - Selections: drag to move, Option-drag to copy, Shift-drag to "smear", arrow keys to nudge, and 8 handles to stretch
+- **Smart Erase** (Edit menu, toolbox button or ⌥⌫): select an object and it disappears, with the spot filled in from the surrounding texture and colors (content-aware fill), not with a flat color. Delete keeps working as before.
 - Any selection shape with Free-Form Select, and **Invert Selection** (⇧⌘I) to select everything except the shape. Delete erases the selected area and Crop cuts the picture to it.
 - Blue handles on the canvas edge to resize the picture
 - Windows 9x chrome: 3D bevels, dithered pressed buttons, status bar with coordinates and size
@@ -72,6 +73,7 @@ The app is not notarized, so macOS Gatekeeper blocks it the first time:
 | Next / previous tab | ⌃⇥ or ⇧⌘] / ⇧⌘[ |
 | Show / Hide Tab Bar | ⇧⌘T |
 | Invert Selection | ⇧⌘I |
+| Smart Erase (fill selection from surroundings) | ⌥⌫ |
 | Menus in Window on / off | ⌥⌘M |
 | Undo / Repeat | ⌘Z / ⌘Y |
 | Cut / Copy / Paste / Select All | ⌘X / ⌘C / ⌘V / ⌘A |
@@ -93,6 +95,7 @@ Sources/ClassicPaint/
   Bitmap.swift             pixel buffer, rasterizing, flood fill, transforms
   BackgroundRemover.swift  Vision-based Remove Background
   State.swift              tools, palette, document and undo stack
+  SmartErase.swift         content-aware fill (multi-scale PatchMatch inpainting)
   Tabs.swift               tab bar and multi-document handling
   WindowMenuBar.swift      optional Windows-style menu bar inside the window
 build.sh                   build script

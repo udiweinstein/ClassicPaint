@@ -29,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.tabbingMode = .disallowed
         window.contentView = main
         window.delegate = self
-        window.minSize = NSSize(width: 460, height: 440)
+        window.minSize = NSSize(width: 460, height: 500)
         window.center()
         window.setFrameAutosaveName("ClassicPaintMainWindow")
         window.backgroundColor = W95.face
@@ -140,6 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         add(edit, "Copy", #selector(copy(_:)), "c", useSelf: false)
         add(edit, "Paste", #selector(paste(_:)), "v", useSelf: false)
         add(edit, "Clear Selection", #selector(delete(_:)), useSelf: false)
+        add(edit, "Smart Erase (Fill From Surroundings)  ⌥⌫", #selector(smartErase(_:)))
         add(edit, "Select All", #selector(selectAll(_:)), "a", useSelf: false)
         add(edit, "Invert Selection", #selector(invertSelection(_:)), "i", [.command, .shift])
         edit.addItem(.separator())
@@ -412,6 +413,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func toggleStatus(_ s: Any?) { main.showStatus.toggle() }
     @objc func toggleTabBar(_ s: Any?) { main.showTabBar.toggle() }
     @objc func invertSelection(_ s: Any?) { canvas.invertSelection() }
+    @objc func smartErase(_ s: Any?) { canvas.smartErase() }
     @objc func toggleMenusInWindow(_ s: Any?) {
         main.showMenuBar.toggle()
         // keep the canvas from jumping when the bar appears/disappears
@@ -603,6 +605,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         • Curve: drag a line, then click/drag twice to bend it.
         • Polygon: drag the first side, click for more corners, double-click to close.
         • Free-Form Select marks any shape; Delete erases it, Crop cuts the picture to it.
+        • Smart Erase (Edit menu, toolbox button or ⌥⌫): removes the selected object and fills the spot from its surroundings. Delete still fills with the background color.
         • Edit ▸ Invert Selection (⇧⌘I) selects everything except the shape; then Delete or Crop.
         • Select: drag to move. Option-drag copies, Shift-drag smears. Arrow keys nudge.
         • Eraser with right button = Color Eraser (replaces the foreground color only).

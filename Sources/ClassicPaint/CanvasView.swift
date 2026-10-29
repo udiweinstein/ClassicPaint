@@ -865,6 +865,93 @@ final class CanvasView: NSView {
         needsDisplay = true
     }
 
+    // MARK: Smart Erase
+
+    private(set) var smartErasing = false
+
+    /// Edit ▸ Smart Erase: fills the selected area from its surroundings instead of the
+    /// background color (Delete keeps working as before).
+    func smartErase() {
+        commitText()
+        guard !smartErasing else { return }
+        guard let s0 = selection else {
+            NSSound.beep()
+            ps.statusText = "Select an area first, then use Smart Erase."
+            ps.setStatus()
+            return
+        }
+        // A moved (floating) selection is dropped where it is; the area under its outline is filled
+        var shape = s0
+        if s0.content != nil {
+            let sh = Selection(x: s0.x, y: s0.y, w: s0.w, h: s0.h, path: s0.path)
+            sh.evenOdd = s0.evenOdd
+            commitSelection()
+            shape = sh
+        }
+        let W = bmp.width, H = bmp.height
+
+        // Rasterize the selection outline into a mask
+        guard let mctx = CGContext(data: nil, width: W, height: H, bitsPerComponent: 8, bytesPerRow: W,
+                                   space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return }
+        mctx.translateBy(x: 0, y: CGFloat(H)); mctx.scaleBy(x: 1, y: -1)
+        mctx.setShouldAntialias(false)
+        mctx.setFillColor(gray: 1, alpha: 1)
+        if let p = shape.path {
+            var t = CGAffineTransform(translationX: CGFloat(shape.x), y: CGFloat(shape.y))
+            if let moved = p.copy(using: &t) { mctx.addPath(moved); mctx.fillPath(using: shape.evenOdd ? .evenOdd : .winding) }
+        } else {
+            mctx.fill(shape.rect)
+        }
+        guard let mdata = mctx.data?.bindMemory(to: UInt8.self, capacity: W * H) else { return }
+        var mask = [Bool](repeating: false, count: W * H)
+        for i in 0..<(W * H) where mdata[i] > 127 { mask[i] = true }
+        // grow by 2 px so soft edges of the removed object go too
+        for _ in 0..<2 {
+            var grown = mask
+            for y in 0..<H { for x in 0..<W where mask[y * W + x] {
+                if x > 0 { grown[y * W + x - 1] = true }
+                if x < W - 1 { grown[y * W + x + 1] = true }
+                if y > 0 { grown[(y - 1) * W + x] = true }
+                if y < H - 1 { grown[(y + 1) * W + x] = true }
+            } }
+            mask = grown
+        }
+
+        selection = nil
+        needsDisplay = true
+        smartErasing = true
+        let oldStatus = ps.statusText
+        ps.statusText = "Smart Erase: filling from the surroundings…"
+        ps.setStatus()
+        let bitmap = bmp
+        let pixels = Array(UnsafeBufferPointer(start: bitmap.px, count: W * H))
+        DispatchQueue.global(qos: .userInitiated).async {
+            var out = pixels
+            let failure = out.withUnsafeMutableBufferPointer { SmartErase.fill($0.baseAddress!, width: W, height: H, mask: mask) }
+            DispatchQueue.main.async {
+                self.smartErasing = false
+                ps.statusText = oldStatus
+                ps.setStatus()
+                switch failure {
+                case .some(.tooLarge):
+                    appDelegate.message("The selected area is too large for Smart Erase.", "Select a smaller area around the object you want to remove.")
+                    return
+                case .some(.noSurroundings):
+                    appDelegate.message("There is not enough picture around the selection to fill it from.")
+                    return
+                case .some(.empty):
+                    return
+                case .none:
+                    break
+                }
+                guard self.doc.bitmap === bitmap, bitmap.width == W, bitmap.height == H else { return }
+                self.doc.pushUndo()
+                for i in 0..<(W * H) where mask[i] { bitmap.px[i] = out[i] }
+                self.needsDisplay = true
+            }
+        }
+    }
+
     // MARK: Remove Background
 
     static let checker: NSColor = {
@@ -1084,6 +1171,8 @@ final class CanvasView: NSView {
 
     override func keyDown(with e: NSEvent) {
         switch e.keyCode {
+        case _ where (e.keyCode == 51 || e.keyCode == 117) && e.modifierFlags.contains(.option):
+            smartErase()    // ⌥⌫: fill the selection from its surroundings
         case 51, 117:   // backspace / forward delete
             deleteSel()
         case 48 where e.modifierFlags.contains(.control):   // ⌃⇥ / ⌃⇧⇥ switch tabs

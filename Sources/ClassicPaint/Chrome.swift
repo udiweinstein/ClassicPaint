@@ -174,6 +174,26 @@ func drawRemoveBgIcon(at o: NSPoint) {
     NSBezierPath(roundedRect: NSRect(x: o.x + 3, y: o.y + 9, width: 10, height: 7), xRadius: 3, yRadius: 3).fill()
 }
 
+func drawSmartEraseIcon(at o: NSPoint, enabled: Bool) {
+    NSGraphicsContext.current?.shouldAntialias = false
+    let k = enabled ? NSColor.black : W95.shadow
+    // eraser block
+    let p = NSBezierPath()
+    for (i, q) in [(1.0, 12.0), (7.0, 6.0), (12.0, 6.0), (6.0, 12.0)].enumerated() {
+        let pt = NSPoint(x: o.x + q.0 + 0.5, y: o.y + q.1 + 0.5)
+        if i == 0 { p.move(to: pt) } else { p.line(to: pt) }
+    }
+    p.close()
+    (enabled ? NSColor(srgbRed: 1, green: 0.75, blue: 0.8, alpha: 1) : W95.face).setFill(); p.fill()
+    k.setStroke(); p.lineWidth = 1; p.stroke()
+    // sparkle: it "fills in" instead of leaving a hole
+    let star = enabled ? NSColor(srgbRed: 1, green: 0.8, blue: 0, alpha: 1) : W95.shadow
+    func R(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) { star.setFill(); NSRect(x: o.x + x, y: o.y + y, width: w, height: h).fill() }
+    R(12, 0, 1, 5); R(10, 2, 5, 1)
+    R(3, 2, 1, 3); R(2, 3, 3, 1)
+    if enabled { NSColor.black.setFill(); NSRect(x: o.x + 12, y: o.y + 2, width: 1, height: 1).fill() }
+}
+
 // MARK: - Tool Box
 
 final class ToolboxView: NSView, NSViewToolTipOwner {
@@ -190,7 +210,7 @@ final class ToolboxView: NSView, NSViewToolTipOwner {
     override init(frame: NSRect) {
         super.init(frame: frame)
         for i in 0..<Tool.allCases.count { addToolTip(toolRect(i), owner: self, userData: nil) }
-        for i in 0..<2 { addToolTip(actionRect(i), owner: self, userData: nil) }
+        for i in 0..<3 { addToolTip(actionRect(i), owner: self, userData: nil) }
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -199,17 +219,17 @@ final class ToolboxView: NSView, NSViewToolTipOwner {
     }
     /// Action buttons (not tools): 0 = Crop, 1 = Remove Background
     func actionRect(_ i: Int) -> NSRect {
-        NSRect(x: 3 + CGFloat(i) * 25, y: 4 + 8 * 25 + 6, width: 25, height: 25)
+        NSRect(x: 3 + CGFloat(i % 2) * 25, y: 4 + 8 * 25 + 6 + CGFloat(i / 2) * 25, width: 25, height: 25)
     }
-    static let actionTitles = ["Crop to Selection", "Remove Background"]
+    static let actionTitles = ["Crop to Selection", "Remove Background", "Smart Erase (fill from surroundings)"]
     private var pressedAction = -1
 
-    var optionsRect: NSRect { NSRect(x: 6, y: 4 + 9 * 25 + 12, width: 44, height: 66) }
+    var optionsRect: NSRect { NSRect(x: 6, y: 4 + 10 * 25 + 12, width: 44, height: 66) }
 
     func view(_ view: NSView, stringForToolTip tag: NSView.ToolTipTag, point: NSPoint,
               userData data: UnsafeMutableRawPointer?) -> String {
         for t in Tool.allCases where toolRect(t.rawValue).contains(point) { return t.title }
-        for i in 0..<2 where actionRect(i).contains(point) { return ToolboxView.actionTitles[i] }
+        for i in 0..<3 where actionRect(i).contains(point) { return ToolboxView.actionTitles[i] }
         return ""
     }
 
@@ -227,12 +247,16 @@ final class ToolboxView: NSView, NSViewToolTipOwner {
         W95.fill(NSRect(x: 3, y: CGFloat(sepY), width: 50, height: 1), W95.shadow)
         W95.fill(NSRect(x: 3, y: CGFloat(sepY + 1), width: 50, height: 1), W95.white)
         let canCrop = appDelegate.canvas.selection != nil
-        for i in 0..<2 {
+        for i in 0..<3 {
             let r = actionRect(i)
             let down = pressedAction == i
             W95.bevel(r, raised: !down)
             let o = NSPoint(x: r.minX + 4 + (down ? 1 : 0), y: r.minY + 4 + (down ? 1 : 0))
-            if i == 0 { drawCropIcon(at: o, enabled: canCrop) } else { drawRemoveBgIcon(at: o) }
+            switch i {
+            case 0: drawCropIcon(at: o, enabled: canCrop)
+            case 1: drawRemoveBgIcon(at: o)
+            default: drawSmartEraseIcon(at: o, enabled: canCrop)
+            }
         }
         W95.bevel(optionsRect, raised: false)
         for it in optionItems() {
@@ -343,10 +367,14 @@ final class ToolboxView: NSView, NSViewToolTipOwner {
         for t in Tool.allCases where toolRect(t.rawValue).contains(p) {
             ps.setTool(t); needsDisplay = true; return
         }
-        for i in 0..<2 where actionRect(i).contains(p) {
+        for i in 0..<3 where actionRect(i).contains(p) {
             pressedAction = i; display()
             pressedAction = -1; needsDisplay = true
-            if i == 0 { appDelegate.canvas.cropToSelection() } else { appDelegate.canvas.removeBackground() }
+            switch i {
+            case 0: appDelegate.canvas.cropToSelection()
+            case 1: appDelegate.canvas.removeBackground()
+            default: appDelegate.canvas.smartErase()
+            }
             return
         }
         for it in optionItems() where it.rect.contains(p) {
