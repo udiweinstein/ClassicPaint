@@ -63,6 +63,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.makeFirstResponder(canvas)
         canvas.updateSize()
         NSApp.activate(ignoringOtherApps: true)
+        // quietly look for a newer release (at most once a day)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { Updater.checkInBackgroundIfDue() }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
@@ -113,6 +115,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
         let appM = submenu(bar, "ClassicPaint")
         add(appM, "About ClassicPaint", #selector(about(_:)))
+        add(appM, "Check for Updates…", #selector(checkForUpdates(_:)))
+        add(appM, "Check for Updates Automatically", #selector(toggleAutoUpdateCheck(_:)))
         appM.addItem(.separator())
         add(appM, "Hide ClassicPaint", #selector(NSApplication.hide(_:)), "h", target: NSApp)
         add(appM, "Hide Others", #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option], target: NSApp)
@@ -188,6 +192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let help = submenu(bar, "Help")
         add(help, "Help Topics", #selector(helpTopics(_:)), "?")
         help.addItem(.separator())
+        add(help, "Check for Updates…", #selector(checkForUpdates(_:)))
         add(help, "About ClassicPaint", #selector(about(_:)))
 
         NSApp.mainMenu = bar
@@ -198,6 +203,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         case #selector(toggleToolbox(_:)): m.state = main.showToolbox ? .on : .off
         case #selector(toggleColorbox(_:)): m.state = main.showColors ? .on : .off
         case #selector(toggleStatus(_:)): m.state = main.showStatus ? .on : .off
+        case #selector(toggleAutoUpdateCheck(_:)): m.state = Updater.autoCheck ? .on : .off
         case #selector(toggleMenusInWindow(_:)): m.state = main.showMenuBar ? .on : .off
         case #selector(toggleTabBar(_:)):
             // with several pictures open the tab bar always shows
@@ -414,6 +420,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func toggleTabBar(_ s: Any?) { main.showTabBar.toggle() }
     @objc func invertSelection(_ s: Any?) { canvas.invertSelection() }
     @objc func smartErase(_ s: Any?) { canvas.smartErase() }
+    @objc func checkForUpdates(_ s: Any?) { Updater.checkNow() }
+    @objc func toggleAutoUpdateCheck(_ s: Any?) { Updater.autoCheck.toggle() }
     @objc func toggleMenusInWindow(_ s: Any?) {
         main.showMenuBar.toggle()
         // keep the canvas from jumping when the bar appears/disappears
@@ -618,7 +626,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
 
     @objc func about(_ s: Any?) {
-        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.4"
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.5"
         message("ClassicPaint", "Version \(v)\nA native macOS tribute to the classic Windows paint program.\n\nNot affiliated with, endorsed by, or sponsored by Microsoft. Microsoft Paint is a trademark of Microsoft Corporation.\n\nReleased under the MIT License.")
     }
 

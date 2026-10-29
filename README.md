@@ -28,6 +28,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 - 50 levels of Undo / Repeat
 
 **Modern additions**
+- **Check for Updates** (ClassicPaint or Help menu): compares your version with the latest GitHub release and offers to download it. The app also checks quietly once a day; you can turn that off.
 - **Menus in Window** (View menu, ⌥⌘M): shows File, Edit, View, Image, Colors and Help as a Windows-style menu bar inside the window. Option+letter opens a menu, like Alt+letter on Windows. On by default, and the choice is remembered.
 - **Tabs**: open several pictures at once. Each tab keeps its own undo history, zoom and file. ⌘N opens a new picture, ⌘W closes a tab, ⌃⇥ or ⇧⌘] / ⇧⌘[ switches tabs, and middle-click on a tab closes it. The tab bar appears automatically when more than one picture is open. With a single picture it stays hidden unless you choose **View → Show Tab Bar** (⇧⌘T).
 - **Crop** to the current selection (⇧⌘X, or the toolbox button)
@@ -97,6 +98,7 @@ Sources/ClassicPaint/
   State.swift              tools, palette, document and undo stack
   SmartErase.swift         content-aware fill (multi-scale PatchMatch inpainting)
   Tabs.swift               tab bar and multi-document handling
+  Updater.swift            Check for Updates (GitHub releases)
   WindowMenuBar.swift      optional Windows-style menu bar inside the window
 build.sh                   build script
 watch.sh                   optional dev helper: rebuilds when a .rebuild file appears
