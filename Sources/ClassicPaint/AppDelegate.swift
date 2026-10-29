@@ -47,6 +47,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
 
     func applicationDidFinishLaunching(_ n: Notification) {
+        // ⌘ or ⌃ with + / = / - (main keyboard or keypad) zooms in / out
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
+            guard let self = self, e.window === self.window else { return e }
+            let f = e.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            guard f.contains(.command) || f.contains(.control), !f.contains(.option) else { return e }
+            let ch = e.charactersIgnoringModifiers ?? ""
+            // key codes 24 (=/+), 27 (-), 69/78 (keypad + / -) work with any keyboard layout
+            if ch == "+" || ch == "=" || e.keyCode == 24 || e.keyCode == 69 { self.canvas.zoomStep(+1); return nil }
+            if ch == "-" || ch == "_" || e.keyCode == 27 || e.keyCode == 78 { self.canvas.zoomStep(-1); return nil }
+            if f.contains(.control) && (ch == "0" || e.keyCode == 29) { self.canvas.setZoom(1, center: nil); return nil }
+            return e
+        }
         window.makeKeyAndOrderFront(nil)
         window.makeFirstResponder(canvas)
         canvas.updateSize()
@@ -424,14 +436,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         f.panel.orderFront(nil)
     }
 
-    private let zoomSteps: [CGFloat] = [1, 2, 3, 4, 6, 8]
     @objc func zoomNormal(_ s: Any?) { canvas.setZoom(1, center: nil) }
     @objc func zoomLarge(_ s: Any?) { canvas.setZoom(4, center: nil) }
     @objc func zoomIn(_ s: Any?) {
-        if let z = zoomSteps.first(where: { $0 > canvas.zoom }) { canvas.setZoom(z, center: nil) }
+        canvas.zoomStep(+1)
     }
     @objc func zoomOut(_ s: Any?) {
-        if let z = zoomSteps.last(where: { $0 < canvas.zoom }) { canvas.setZoom(z, center: nil) }
+        canvas.zoomStep(-1)
     }
     @objc func zoomCustom(_ s: Any?) {
         let levels = [1, 2, 4, 6, 8]
@@ -596,6 +607,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         • Select: drag to move. Option-drag copies, Shift-drag smears. Arrow keys nudge.
         • Eraser with right button = Color Eraser (replaces the foreground color only).
         • Drag the blue handles on the canvas edge to resize the picture.
+        • Zoom: ⌘ or ⌃ with + / −, or with the mouse wheel; pinch on a trackpad. ⌘0 = 100%.
         • ⌘Z Undo, ⌘Y Repeat, ⌘G Grid, ⌘F View Bitmap, ⌘R Flip/Rotate, ⌘E Attributes.
         • View ▸ Menus in Window (⌥⌘M) puts File/Edit/View/… inside the window, like Windows. Option+letter opens a menu.
         • Tabs: ⌘N new picture, ⌘O open (several at once), ⌘W close tab, ⌃⇥ or ⇧⌘] / ⇧⌘[ to switch.

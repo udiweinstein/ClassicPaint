@@ -191,7 +191,8 @@ final class CanvasView: NSView {
         guard let g = NSGraphicsContext.current?.cgContext else { return }
         NSGraphicsContext.current?.shouldAntialias = false
         W95.shadow.setFill(); dirtyRect.fill()
-        g.interpolationQuality = .none
+        // crisp pixels when zoomed in, smooth when zoomed out below 100%
+        g.interpolationQuality = zoom < 1 ? .medium : .none
         let f = imageFrame
         CanvasView.checker.setFill(); f.fill()      // shows through transparent pixels
         drawImage(bmp.image(), f, g)
@@ -931,6 +932,55 @@ final class CanvasView: NSView {
         window?.invalidateCursorRects(for: self)
         needsDisplay = true
         ps.notify()
+    }
+
+    // MARK: Zoom with keyboard / wheel / pinch
+
+    static let zoomSteps: [CGFloat] = [0.125, 0.25, 1.0 / 3, 0.5, 2.0 / 3, 1, 2, 3, 4, 6, 8, 12, 16]
+    private var wheelAccum: CGFloat = 0
+    private var pinchAccum: CGFloat = 0
+
+    /// One zoom step in (+1) or out (-1). With a point, that spot of the picture stays under it
+    /// (mouse wheel / pinch); without one, the middle of the view stays put (keyboard).
+    func zoomStep(_ dir: Int, at viewPoint: NSPoint? = nil) {
+        let cur = zoom
+        let next = dir > 0 ? CanvasView.zoomSteps.first { $0 > cur + 0.001 }
+                           : CanvasView.zoomSteps.last { $0 < cur - 0.001 }
+        guard let z = next else { return }
+        let vr = visibleRect
+        let vp = viewPoint ?? NSPoint(x: vr.midX, y: vr.midY)
+        // picture coordinate under the anchor, and where the anchor sits inside the visible area
+        let ix = (vp.x - pad) / zoom, iy = (vp.y - pad) / zoom
+        let ox = vp.x - vr.minX, oy = vp.y - vr.minY
+        commitText()
+        zoom = z
+        updateSize()
+        scroll(NSPoint(x: max(0, pad + ix * z - ox), y: max(0, pad + iy * z - oy)))
+        window?.invalidateCursorRects(for: self)
+        needsDisplay = true
+        ps.notify()
+        ps.setStatus(size: "Zoom \(Int((z * 100).rounded()))%")
+    }
+
+    /// ⌘ or ⌃ + mouse wheel zooms (plain wheel scrolls as usual)
+    override func scrollWheel(with e: NSEvent) {
+        let f = e.modifierFlags.union(NSEvent.modifierFlags)   // also the keys held right now
+        guard f.contains(.command) || f.contains(.control) else { super.scrollWheel(with: e); return }
+        var d = e.hasPreciseScrollingDeltas ? e.scrollingDeltaY / 12 : e.scrollingDeltaY
+        if e.isDirectionInvertedFromDevice { d = -d }       // "natural scrolling": wheel up = zoom in either way
+        wheelAccum += d
+        let vp = convert(e.locationInWindow, from: nil)
+        if wheelAccum >= 1 { wheelAccum = 0; zoomStep(+1, at: vp) }
+        else if wheelAccum <= -1 { wheelAccum = 0; zoomStep(-1, at: vp) }
+    }
+
+    /// Trackpad pinch zooms around the fingers
+    override func magnify(with e: NSEvent) {
+        pinchAccum += e.magnification
+        let vp = convert(e.locationInWindow, from: nil)
+        if pinchAccum > 0.12 { pinchAccum = 0; zoomStep(+1, at: vp) }
+        else if pinchAccum < -0.12 { pinchAccum = 0; zoomStep(-1, at: vp) }
+        if e.phase == .ended || e.phase == .cancelled { pinchAccum = 0 }
     }
 
     func transformImage(_ f: (Bitmap) -> Bitmap) {

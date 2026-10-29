@@ -22,7 +22,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 - Blue handles on the canvas edge to resize the picture
 - Windows 9x chrome: 3D bevels, dithered pressed buttons, status bar with coordinates and size
 - Image menu: Flip/Rotate, Stretch/Skew, Invert Colors, Attributes, Clear Image, Draw Opaque
-- View menu: Zoom (up to 8×) with pixel grid, full-screen View Bitmap, toggle tool box, color box and status bar
+- Zoom from 12.5% to 1600% with ⌘/⌃ and + / −, ⌘/⌃ + mouse wheel (zooms around the pointer) or trackpad pinch, plus a pixel grid, full-screen View Bitmap, toggle tool box, color box and status bar
 - Set as Desktop Background, Copy To / Paste From, system clipboard in both directions
 - 50 levels of Undo / Repeat
 
@@ -80,7 +80,7 @@ The app is not notarized, so macOS Gatekeeper blocks it the first time:
 | Flip/Rotate · Stretch/Skew · Attributes | ⌘R · ⌥⌘W · ⌘E |
 | Invert Colors · Clear Image | ⌘I · ⇧⌘N |
 | Tool Box · Color Box · Grid · View Bitmap | ⌘T · ⌘L · ⌘G · ⌘F |
-| Zoom in / out / normal | ⌘= / ⌘- / ⌘0 |
+| Zoom in / out / normal | ⌘ or ⌃ with + / − (or the mouse wheel, or pinch) / ⌘0 |
 
 ## Project layout
 
