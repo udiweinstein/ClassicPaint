@@ -992,6 +992,9 @@ final class CanvasView: NSView {
             deleteSel()
         case 48 where e.modifierFlags.contains(.control):   // ⌃⇥ / ⌃⇧⇥ switch tabs
             if e.modifierFlags.contains(.shift) { appDelegate.previousTab(nil) } else { appDelegate.nextTab(nil) }
+        case _ where e.modifierFlags.contains(.option) && !e.modifierFlags.contains(.command)
+                        && appDelegate.main.showMenuBar && appDelegate.main.menuBar.openMenu(forKey: e):
+            break
         case 53:        // escape
             if polyActive || curveStage > 0 {
                 if let b = base { bmp.restore(from: b) }

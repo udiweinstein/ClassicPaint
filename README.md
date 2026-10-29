@@ -26,6 +26,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 - 50 levels of Undo / Repeat
 
 **Modern additions**
+- **Menus in Window** (View menu, ⌥⌘M): shows File, Edit, View, Image, Colors and Help as a Windows-style menu bar inside the window. Option+letter opens a menu, like Alt+letter on Windows. Off by default, and the choice is remembered.
 - **Tabs**: open several pictures at once. Each tab keeps its own undo history, zoom and file. ⌘N opens a new picture, ⌘W closes a tab, ⌃⇥ or ⇧⌘] / ⇧⌘[ switches tabs, and middle-click on a tab closes it. The tab bar is hidden by default: use **View → Show Tab Bar** (⇧⌘T).
 - **Crop** to the current selection (⇧⌘X, or the toolbox button)
 - **Remove Background** using Apple's on-device subject segmentation (⇧⌘B, or the toolbox button). It works on the whole picture or on a selection and needs macOS 14 or later.
@@ -69,6 +70,7 @@ The app is not notarized, so macOS Gatekeeper blocks it the first time:
 | New picture (tab) / Open / Close tab | ⌘N / ⌘O / ⌘W |
 | Next / previous tab | ⌃⇥ or ⇧⌘] / ⇧⌘[ |
 | Show / Hide Tab Bar | ⇧⌘T |
+| Menus in Window on / off | ⌥⌘M |
 | Undo / Repeat | ⌘Z / ⌘Y |
 | Cut / Copy / Paste / Select All | ⌘X / ⌘C / ⌘V / ⌘A |
 | Crop to selection | ⇧⌘X |
@@ -90,6 +92,7 @@ Sources/ClassicPaint/
   BackgroundRemover.swift  Vision-based Remove Background
   State.swift              tools, palette, document and undo stack
   Tabs.swift               tab bar and multi-document handling
+  WindowMenuBar.swift      optional Windows-style menu bar inside the window
 build.sh                   build script
 watch.sh                   optional dev helper: rebuilds when a .rebuild file appears
 Info.plist                 app bundle metadata

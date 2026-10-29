@@ -132,6 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         add(view, "Color Box", #selector(toggleColorbox(_:)), "l")
         add(view, "Status Bar", #selector(toggleStatus(_:)))
         add(view, "Text Toolbar", #selector(toggleTextToolbar(_:)))
+        add(view, "Menus in Window (Windows Style)", #selector(toggleMenusInWindow(_:)), "m", [.command, .option])
         view.addItem(.separator())
         let zoomItem = NSMenuItem(title: "Zoom", action: nil, keyEquivalent: "")
         let zoomM = NSMenu(title: "Zoom")
@@ -177,6 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         case #selector(toggleToolbox(_:)): m.state = main.showToolbox ? .on : .off
         case #selector(toggleColorbox(_:)): m.state = main.showColors ? .on : .off
         case #selector(toggleStatus(_:)): m.state = main.showStatus ? .on : .off
+        case #selector(toggleMenusInWindow(_:)): m.state = main.showMenuBar ? .on : .off
         case #selector(toggleTabBar(_:)): m.title = main.showTabBar ? "Hide Tab Bar" : "Show Tab Bar"
         case #selector(toggleGrid(_:)): m.state = ps.showGrid ? .on : .off
         case #selector(toggleOpaque(_:)): m.state = ps.transparentSelect ? .off : .on
@@ -387,6 +389,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func toggleColorbox(_ s: Any?) { main.showColors.toggle() }
     @objc func toggleStatus(_ s: Any?) { main.showStatus.toggle() }
     @objc func toggleTabBar(_ s: Any?) { main.showTabBar.toggle() }
+    @objc func toggleMenusInWindow(_ s: Any?) {
+        main.showMenuBar.toggle()
+        // keep the canvas from jumping when the bar appears/disappears
+        var f = window.frame
+        let dh = main.showMenuBar ? WindowMenuBar.height : -WindowMenuBar.height
+        f.size.height += dh; f.origin.y -= dh
+        window.setFrame(f, display: true, animate: false)
+    }
     @objc func toggleGrid(_ s: Any?) { ps.showGrid.toggle(); canvas.needsDisplay = true }
     @objc func toggleTextToolbar(_ s: Any?) {
         if let f = fontToolbar, f.panel.isVisible { f.panel.orderOut(nil) } else { showFontToolbar() }
@@ -573,12 +583,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         • Eraser with right button = Color Eraser (replaces the foreground color only).
         • Drag the blue handles on the canvas edge to resize the picture.
         • ⌘Z Undo, ⌘Y Repeat, ⌘G Grid, ⌘F View Bitmap, ⌘R Flip/Rotate, ⌘E Attributes.
+        • View ▸ Menus in Window (⌥⌘M) puts File/Edit/View/… inside the window, like Windows. Option+letter opens a menu.
         • Tabs: ⌘N new picture, ⌘O open (several at once), ⌘W close tab, ⌃⇥ or ⇧⌘] / ⇧⌘[ to switch.
         """)
     }
 
     @objc func about(_ s: Any?) {
-        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.2"
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.3"
         message("ClassicPaint", "Version \(v)\nA native macOS tribute to the classic Windows paint program.\n\nNot affiliated with, endorsed by, or sponsored by Microsoft. Microsoft Paint is a trademark of Microsoft Corporation.\n\nReleased under the MIT License.")
     }
 

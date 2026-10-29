@@ -461,6 +461,7 @@ final class MainView: NSView {
     let scroll = NSScrollView(frame: .zero)
     let canvas = CanvasView(frame: .zero)
     let tabBar = TabBarView(frame: .zero)
+    let menuBar = WindowMenuBar(frame: .zero)
 
     var showToolbox = true { didSet { needsLayout = true } }
     var showColors = true { didSet { needsLayout = true } }
@@ -468,6 +469,10 @@ final class MainView: NSView {
     /// Tab bar is hidden by default; the choice is remembered between launches
     var showTabBar = UserDefaults.standard.bool(forKey: "ShowTabBar") {
         didSet { UserDefaults.standard.set(showTabBar, forKey: "ShowTabBar"); needsLayout = true }
+    }
+    /// Windows-style menu bar inside the window (off by default, remembered)
+    var showMenuBar = UserDefaults.standard.bool(forKey: "MenusInWindow") {
+        didSet { UserDefaults.standard.set(showMenuBar, forKey: "MenusInWindow"); needsLayout = true; menuBar.needsDisplay = true }
     }
 
     override init(frame: NSRect) {
@@ -480,7 +485,7 @@ final class MainView: NSView {
         scroll.drawsBackground = true
         scroll.backgroundColor = W95.shadow
         scroll.documentView = canvas
-        for v in [toolbox, colorBox, statusBar, tabBar, scroll] as [NSView] { addSubview(v) }
+        for v in [menuBar, toolbox, colorBox, statusBar, tabBar, scroll] as [NSView] { addSubview(v) }
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -492,16 +497,19 @@ final class MainView: NSView {
         let sbH = showStatus ? StatusBarView.height : 0
         let cbH = showColors ? ColorBoxView.height : 0
         let tbW = showToolbox ? ToolboxView.width : 0
+        let top = showMenuBar ? WindowMenuBar.height : 0
+        menuBar.isHidden = !showMenuBar
+        menuBar.frame = NSRect(x: 0, y: 0, width: b.width, height: top)
         statusBar.isHidden = !showStatus
         colorBox.isHidden = !showColors
         toolbox.isHidden = !showToolbox
         statusBar.frame = NSRect(x: 0, y: b.height - sbH, width: b.width, height: sbH)
         colorBox.frame = NSRect(x: 0, y: b.height - sbH - cbH, width: b.width, height: cbH)
-        toolbox.frame = NSRect(x: 0, y: 0, width: tbW, height: max(0, b.height - sbH - cbH))
+        toolbox.frame = NSRect(x: 0, y: top, width: tbW, height: max(0, b.height - sbH - cbH - top))
         let tH = showTabBar ? TabBarView.height : 0
         tabBar.isHidden = !showTabBar
-        tabBar.frame = NSRect(x: tbW, y: 0, width: max(0, b.width - tbW), height: tH)
-        scroll.frame = NSRect(x: tbW, y: tH, width: max(0, b.width - tbW), height: max(0, b.height - sbH - cbH - tH))
+        tabBar.frame = NSRect(x: tbW, y: top, width: max(0, b.width - tbW), height: tH)
+        scroll.frame = NSRect(x: tbW, y: top + tH, width: max(0, b.width - tbW), height: max(0, b.height - sbH - cbH - tH - top))
         canvas.updateSize()
     }
 }
