@@ -18,7 +18,7 @@ Free-Form Select, Select, Eraser / Color Eraser, Fill With Color, Pick Color, Ma
 - The original 28-color palette: left click sets the foreground color, right click (or Control-click) sets the background color, and double-click edits a color
 - Options box under the tool box: line widths, brush shapes, eraser and airbrush sizes, fill styles, opaque or transparent selection, zoom levels
 - Selections: drag to move, Option-drag to copy, Shift-drag to "smear", arrow keys to nudge, and 8 handles to stretch
-- Selection shapes: rectangle or **ellipse** (Select tool options), any shape with Free-Form Select, and **Invert Selection** (⇧⌘I) to select everything except the shape. Delete erases the selected area and Crop cuts the picture to it.
+- Any selection shape with Free-Form Select, and **Invert Selection** (⇧⌘I) to select everything except the shape. Delete erases the selected area and Crop cuts the picture to it.
 - Blue handles on the canvas edge to resize the picture
 - Windows 9x chrome: 3D bevels, dithered pressed buttons, status bar with coordinates and size
 - Image menu: Flip/Rotate, Stretch/Skew, Invert Colors, Attributes, Clear Image, Draw Opaque

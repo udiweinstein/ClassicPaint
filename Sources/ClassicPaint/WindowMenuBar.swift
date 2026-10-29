@@ -7,8 +7,8 @@ import Cocoa
 
 final class WindowMenuBar: NSView {
     override var isFlipped: Bool { true }
-    static let height: CGFloat = 20
-    static let gap: CGFloat = 5          // space between the menu bar and the tool box / canvas
+    static let height: CGFloat = 25      // titles in the top 19pt, separator line at the bottom
+    static let gap: CGFloat = 5          // space between the separator line and the tool box / canvas
 
     private var pressed = -1
     private var pendingOpen = -1          // menu to open next, when the mouse moves to another title
@@ -27,7 +27,7 @@ final class WindowMenuBar: NSView {
         return menus.map { it in
             let w = ceil((it.title as NSString).size(withAttributes: [.font: font]).width) + 14
             defer { x += w }
-            return NSRect(x: x, y: 1, width: w, height: WindowMenuBar.height - 2)
+            return NSRect(x: x, y: 1, width: w, height: 18)
         }
     }
 
@@ -90,7 +90,7 @@ final class WindowMenuBar: NSView {
 
             // Place the menu's top edge just under the menu bar, not over the title
             // (modern macOS draws the menu a few points above the requested point)
-            m.popUp(positioning: nil, at: NSPoint(x: r.minX, y: bounds.maxY + 5), in: self)
+            m.popUp(positioning: nil, at: NSPoint(x: r.minX, y: r.maxY + 6), in: self)
             watcher.invalidate()
 
             if pendingOpen >= 0 { i = pendingOpen; continue }

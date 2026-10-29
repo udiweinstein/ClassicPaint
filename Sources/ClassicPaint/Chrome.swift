@@ -246,38 +246,19 @@ final class ToolboxView: NSView, NSViewToolTipOwner {
         var items: [Opt] = []
         switch ps.tool {
         case .select, .freeSelect, .text:
-            // The Select tool gets an extra row: rectangle or ellipse selection
-            let withShape = ps.tool == .select
-            if withShape {
-                for i in 0..<2 {
-                    let r = NSRect(x: o.minX + CGFloat(i) * 19, y: o.minY + 1, width: 19, height: 20)
-                    items.append(Opt(rect: r, selected: ps.selectEllipse == (i == 1), draw: { r, c in
-                        let s = NSRect(x: r.midX - 6.5, y: r.midY - 5, width: 13, height: 10)
-                        let p = i == 0 ? NSBezierPath(rect: s.insetBy(dx: 0.5, dy: 0.5)) : NSBezierPath(ovalIn: s.insetBy(dx: 0.5, dy: 0.5))
-                        var pat: [CGFloat] = [2, 1]
-                        p.setLineDash(&pat, count: 2, phase: 0)
-                        p.lineWidth = 1
-                        c.setStroke(); p.stroke()
-                    }, act: { ps.selectEllipse = (i == 1) }))
-                }
-            }
-            let y0 = withShape ? o.minY + 23 : o.minY + 2
-            let rowH: CGFloat = withShape ? 18 : 26
             for i in 0..<2 {
-                let r = NSRect(x: o.minX, y: y0 + CGFloat(i) * (rowH + (withShape ? 1 : 3)), width: o.width, height: rowH)
+                let r = NSRect(x: o.minX, y: o.minY + 2 + CGFloat(i) * 29, width: o.width, height: 26)
                 items.append(Opt(rect: r, selected: ps.transparentSelect == (i == 1), draw: { r, _ in
-                    let bh = min(18, r.height - 4)
-                    let box = NSRect(x: r.midX - 13, y: (r.midY - bh / 2).rounded(), width: 26, height: bh)
+                    let box = NSRect(x: r.midX - 13, y: r.midY - 9, width: 26, height: 18)
                     if i == 0 { W95.fill(box, .white) }
                     NSColor.black.setStroke(); NSBezierPath(rect: box.insetBy(dx: 0.5, dy: 0.5)).stroke()
-                    let d = bh - 8
                     NSColor(srgbRed: 1, green: 0, blue: 0, alpha: 1).setFill()
-                    NSBezierPath(ovalIn: NSRect(x: box.minX + 3, y: box.midY - d / 2, width: d, height: d)).fill()
+                    NSBezierPath(ovalIn: NSRect(x: box.minX + 3, y: box.minY + 4, width: 10, height: 10)).fill()
                     NSColor(srgbRed: 0, green: 0, blue: 1, alpha: 1).setFill()
                     let tri = NSBezierPath()
-                    tri.move(to: NSPoint(x: box.minX + 13, y: box.maxY - 3))
+                    tri.move(to: NSPoint(x: box.minX + 12, y: box.maxY - 3))
                     tri.line(to: NSPoint(x: box.minX + 18, y: box.minY + 3))
-                    tri.line(to: NSPoint(x: box.minX + 23, y: box.maxY - 3))
+                    tri.line(to: NSPoint(x: box.minX + 24, y: box.maxY - 3))
                     tri.close(); tri.fill()
                 }, act: { ps.transparentSelect = (i == 1) }))
             }

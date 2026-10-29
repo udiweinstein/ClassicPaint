@@ -216,11 +216,7 @@ final class CanvasView: NSView {
         }
 
         if let m = marquee {
-            if ps.tool == .select && ps.selectEllipse {
-                dashedPath(CGPath(ellipseIn: CGRect(x: 0, y: 0, width: m.width, height: m.height), transform: nil), at: m.origin, g)
-            } else {
-                dashedRect(viewRect(m), g)
-            }
+            dashedRect(viewRect(m), g)
         }
         if lasso.count > 1 {
             g.saveGState()
@@ -507,9 +503,7 @@ final class CanvasView: NSView {
             }
         case .select:
             if !movingSel, let m = marquee, m.width > 0, m.height > 0, start != last {
-                let shape: CGPath? = ps.selectEllipse
-                    ? CGPath(ellipseIn: CGRect(x: 0, y: 0, width: m.width, height: m.height), transform: nil) : nil
-                selection = Selection(x: Int(m.minX), y: Int(m.minY), w: Int(m.width), h: Int(m.height), path: shape)
+                selection = Selection(x: Int(m.minX), y: Int(m.minY), w: Int(m.width), h: Int(m.height))
             }
             marquee = nil
         case .freeSelect:

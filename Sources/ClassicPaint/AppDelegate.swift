@@ -591,7 +591,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         • Shift constrains lines to 45° and shapes to squares/circles.
         • Curve: drag a line, then click/drag twice to bend it.
         • Polygon: drag the first side, click for more corners, double-click to close.
-        • Select tool options: rectangle or ellipse shape. Free-Form Select draws any shape.
+        • Free-Form Select marks any shape; Delete erases it, Crop cuts the picture to it.
         • Edit ▸ Invert Selection (⇧⌘I) selects everything except the shape; then Delete or Crop.
         • Select: drag to move. Option-drag copies, Shift-drag smears. Arrow keys nudge.
         • Eraser with right button = Color Eraser (replaces the foreground color only).
